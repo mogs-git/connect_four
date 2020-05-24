@@ -1,8 +1,11 @@
+require_relative 'display.rb'
+
 class Game
-	attr_accessor :board, :players
-	attr_reader :turn
+	attr_accessor :board, :players, :turn
+	include Display
+
 	def initialize
-		@players = [create_player] << create_player(self.players[0])
+		@players = setup_players
 		@board = Board.new
 		@turn = 0
 		play_game
@@ -10,12 +13,20 @@ class Game
 
 	private
 
+	def setup_players
+		p1 = create_player
+		p2 = create_player(p1)
+		[p1, p2]
+	end
+
 	def play_turn
-		chosen_column = self.players[turn].choose_column
-		while !column_full? chosen_column
-			chosen_column = self.players[turn].choose_column
+		column_index = self.players[turn].choose_column
+		column = board.cells.transpose[column_index]
+		while column_full? column
+			column_index = self.players[turn].choose_column
+			column = board.cells.transpose[column_index]
 		end
-		board[next_empty_position(chosen_column)][chosen_column] = self.players[turn].piece
+		board.cells[next_empty_position(column_index)][column_index] = self.players[turn].piece
 	end
 
 	def next_turn
@@ -24,15 +35,16 @@ class Game
 
 	def turn_sequence
 		loop do
+			board.display_board
 			play_turn
 			break if game_over?
 			next_turn
 		end
 	end
 
-	def next_empty_position column
+	def next_empty_position column_index
 		empty_cell = " "
-		board.transpose[column].rindex(empty_cell)
+		board.cells.transpose[column_index].rindex(empty_cell)
 	end
 
 	def column_full? column # column is an array of four cells
@@ -41,13 +53,15 @@ class Game
 	end
 
 	def winning_combinations
-		rows = self.board[0..3]
-		columns = self.board.transpose[0..3]
-		diagonals = [[][]]
-		[0..3].each do |index|
-			diagonals.first.push(board[index][index])
-			diagonals.last.push(board[3-index][index])
+		rows = self.board.cells[0..3]
+		columns = self.board.cells.transpose[0..3]
+		diagonals = Array.new(2){Array.new(1).compact}
+		(0..3).to_a.each do |val|
+			puts "board at #{val},#{val}: #{self.board.cells[val][val]}"
+			diagonals.first.push(self.board.cells[val][val])
+			diagonals.last.push(self.board.cells[3-val][val])
 		end
+		puts diagonals.to_s
 		return rows + columns + diagonals
 	end
 
@@ -65,11 +79,11 @@ class Game
 	end
 
 	def connected_four?
-		winning_combinations.any? {|combo| all_same? && none_empty?}
+		winning_combinations.any? {|combo| all_same?(combo) && none_empty?(combo)}
 	end
 
 	def game_over?
-		connected_four? || board.full?
+		connected_four? || board_full?
 	end
 
 	def create_player(other=nil)
@@ -82,13 +96,14 @@ class Game
 		else 
 			colour = colours.select{|el| el != other.colour}.first
 		end
-		puts player_welcome_message # "hi #name, your pieces are #colour"
+		puts player_welcome_message(name, colour) # "hi #name, your pieces are #colour"
 		Player.new(name, colour)
 	end
 
 	def play_game
 		turn_sequence
-		if board.full?
+		board.display_board
+		if board_full?
 			puts draw_message
 		else
 			puts win_message (players[turn])
@@ -98,7 +113,7 @@ class Game
 
 	def play_again?
 		puts play_again_message
-		ans = get.chomp
+		ans = gets.chomp
 		Game.new if ans.downcase.start_with?("y")
 	end
 end
@@ -131,6 +146,9 @@ class Board
 end
 
 class Player
+	attr_reader :name, :colour, :piece
+	include Display
+
 	def initialize (name, colour)
 		@name = name
 		@colour = colour
@@ -139,7 +157,7 @@ class Player
 
 	def choose_column # the GAME knows which columns are full...
 		puts choose_column_message
-		gets.chomp
+		gets.chomp.to_i
 	end
 end
 
@@ -158,9 +176,6 @@ class String
   end
 end
 
-def swap two_value_array, current
-	return current == two_value_array[0] ? two_value_array[1] : two_value_array[0]
-end
 
 board = []
 4.times {|i|board.push ["a", "b","c", "d"]}
@@ -171,4 +186,4 @@ board.transpose[0][0] = "e"
 board[0][0] = "e"
 puts board.to_s
 
-puts swap([1,2], 1)
+Game.new
