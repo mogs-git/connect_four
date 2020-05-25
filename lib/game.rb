@@ -56,13 +56,31 @@ class Game
 		column.count{|el| el == empty_cell} == 0
 	end
 
-	def winning_combinations
-		rows = self.board.cells[0..3]
-		columns = self.board.cells.transpose[0..3]
+	def sliding_grid_check
+		# start in top left of board (0,0)
+		# move across rows, then down columns, until n_rows-4, n_cols-4
+		# call connected_four on every subgrid
+		row_origins = (0..board.n_rows-4).to_a
+		column_origins = (0..board.n_cols-4).to_a 
+		row_origins.each do |x|
+			column_origins.each do |y|
+				return true if connected_four?(x, y)
+			end
+		end
+		return false
+	end
+
+	def winning_combinations (origin_x, origin_y)
+		# puts "testing #{origin_x} to #{origin_x+3},#{origin_y} to #{origin_y+3}"
+		rows = board.cells[origin_x..(origin_x+3)]
+		rows = rows.map {|sub_array| sub_array[origin_y..(origin_y+3)]}
+		columns = board.cells.transpose[origin_y..(origin_y+3)]
+		columns = columns.map {|sub_array| sub_array[origin_x..(origin_x+3)]}
+		# puts "columns: #{columns.to_s}" if origin_x == 2 && origin_y == 3
 		diagonals = Array.new(2){Array.new(1).compact}
 		(0..3).to_a.each do |val|
-			diagonals.first.push(self.board.cells[val][val])
-			diagonals.last.push(self.board.cells[3-val][val])
+			diagonals.first.push(board.cells[origin_x + val][origin_y + val])
+			diagonals.last.push(board.cells[origin_x + (3-val)][origin_y + val])
 		end
 		return rows + columns + diagonals
 	end
@@ -80,21 +98,21 @@ class Game
 		board.cells.flatten.none? {|cell| cell == " "}
 	end
 
-	def connected_four?
-		winning_combinations.any? {|combo| all_same?(combo) && none_empty?(combo)}
+	def connected_four? (origin_x, origin_y)
+		winning_combinations(origin_x, origin_y).any? {|combo| all_same?(combo) && none_empty?(combo)}
 	end
 
 	def game_over?
-		connected_four? || board_full?
+		sliding_grid_check || board_full?
 	end
 
 	def create_player(other=nil)
 		valid_colours = ["red", "blue"]
-		puts enter_name_message
+		print enter_name_message
 		name = gets.chomp
 		if !other
 			begin 
-				puts choose_colour_message
+				print choose_colour_message
 				colour = gets.chomp
 				raise "Colour not valid" unless valid_colours.include? colour
 			rescue
@@ -108,6 +126,7 @@ class Game
 	end
 
 	def play_game
+		game_commence_message
 		turn_sequence
 		board.display_board
 		if board_full?

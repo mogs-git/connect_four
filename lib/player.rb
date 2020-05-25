@@ -12,11 +12,11 @@ class Player
 
 	def choose_column # the GAME knows which columns are full...
 		begin
-			puts choose_column_message
+			print choose_column_message
 			col = gets.chomp
-			raise "Enter a single digit number (0/1/2/3)" unless col.match(/^[0-9]$/)
+			raise "Enter a single digit number (0/1/2/3/5/6)" unless col.match(/^[0-9]$/)
 			col = col.to_i
-			raise "Enter a valid column (0/1/2/3)" unless [0,1,2,3].include? col 
+			raise "Enter a valid column (0/1/2/3/5/6)" unless [0,1,2,3,4,5,6].include? col 
 		rescue
 			retry
 		end

@@ -1,14 +1,14 @@
 module Display
 	def enter_name_message
-		"Please enter your name:"
+		"Please enter your name: "
 	end
 
 	def choose_colour_message
-		"Please choose the colour of your pieces (red or blue)"
+		"Please choose the colour of your pieces (red or blue): "
 	end
 
 	def player_welcome_message(name, colour)
-		"Hi #{name}, your pieces are #{colour}!"
+		"\nHi #{name}, your pieces are #{colour}!\n\n"
 	end
 
 	def draw_message
@@ -24,7 +24,25 @@ module Display
 	end
 
 	def choose_column_message
-		"Choose a column (0/1/2/3)"
+		"Choose a column (0/1/2/3/4/5/6): "
+	end
+
+	def game_commence_message
+		3.times do 
+			print "."
+			sleep(0.5)
+		end
+		puts
+		puts
+		print "LET THE GAME COMMENCE"
+		puts
+		puts
+		3.times do 
+			print "."
+			sleep(0.5)
+		end
+		puts
+		puts
 	end
 
 end
