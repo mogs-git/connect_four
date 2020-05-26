@@ -22,11 +22,11 @@ class Game
 	def play_turn
 		column_index = players[turn].choose_column
 		column = board.cells.transpose[column_index]
-		while column_full? column
+		while board.column_full? column
 			column_index = players[turn].choose_column
 			column = board.cells.transpose[column_index]
 		end
-		board.cells[next_empty_position(column_index)][column_index] = players[turn].piece
+		board.play_piece(column_index, players[turn])
 	end
 
 	def turn=(str)
@@ -46,64 +46,8 @@ class Game
 		end
 	end
 
-	def next_empty_position column_index
-		empty_cell = " "
-		board.cells.transpose[column_index].rindex(empty_cell)
-	end
-
-	def column_full? column # column is an array of four cells
-		empty_cell = " "
-		column.count{|el| el == empty_cell} == 0
-	end
-
-	def sliding_grid_check
-		# start in top left of board (0,0)
-		# move across rows, then down columns, until n_rows-4, n_cols-4
-		# call connected_four on every subgrid
-		row_origins = (0..board.n_rows-4).to_a
-		column_origins = (0..board.n_cols-4).to_a 
-		row_origins.each do |x|
-			column_origins.each do |y|
-				return true if connected_four?(x, y)
-			end
-		end
-		return false
-	end
-
-	def winning_combinations (origin_x, origin_y)
-		# puts "testing #{origin_x} to #{origin_x+3},#{origin_y} to #{origin_y+3}"
-		rows = board.cells[origin_x..(origin_x+3)]
-		rows = rows.map {|sub_array| sub_array[origin_y..(origin_y+3)]}
-		columns = board.cells.transpose[origin_y..(origin_y+3)]
-		columns = columns.map {|sub_array| sub_array[origin_x..(origin_x+3)]}
-		# puts "columns: #{columns.to_s}" if origin_x == 2 && origin_y == 3
-		diagonals = Array.new(2){Array.new(1).compact}
-		(0..3).to_a.each do |val|
-			diagonals.first.push(board.cells[origin_x + val][origin_y + val])
-			diagonals.last.push(board.cells[origin_x + (3-val)][origin_y + val])
-		end
-		return rows + columns + diagonals
-	end
-
-	def all_same? four
-		four.uniq.length == 1
-	end
-
-	def none_empty? four
-		empty_cell = " "
-		four.none?{|el| el == empty_cell}
-	end
-
-	def board_full?
-		board.cells.flatten.none? {|cell| cell == " "}
-	end
-
-	def connected_four? (origin_x, origin_y)
-		winning_combinations(origin_x, origin_y).any? {|combo| all_same?(combo) && none_empty?(combo)}
-	end
-
 	def game_over?
-		sliding_grid_check || board_full?
+		board.sliding_grid_check || board.full?
 	end
 
 	def create_player(other=nil)
@@ -129,7 +73,7 @@ class Game
 		game_commence_message
 		turn_sequence
 		board.display_board
-		if board_full?
+		if board.full?
 			puts draw_message
 		else
 			puts win_message (players[turn])
